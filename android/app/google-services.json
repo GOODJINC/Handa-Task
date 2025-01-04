@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "356284806672",
+    "project_id": "handa-ffa31",
+    "storage_bucket": "handa-ffa31.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:356284806672:android:bbae60d849758a6458fc95",
+        "android_client_info": {
+          "package_name": "com.handatask.todo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJzfJInY-udqRb27VH5dIQNcSrjPs4ycg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
