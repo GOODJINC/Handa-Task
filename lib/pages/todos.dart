@@ -75,11 +75,13 @@ class _TodosState extends State<Todos> {
     final newTodo = Todo(
       title: controller.text,
       description: '',
+      isCompleted: false,
       createdAt: day,
+      lastModified: DateTime.now(),
       color: 'blue',
       tag: 'default',
     );
-
+    print('Adding new todo: ${newTodo.toMap()}');
     await DatabaseHelper.instance.insertTodo(newTodo);
     controller.clear();
     await _loadTodos();
@@ -137,18 +139,18 @@ class _TodosState extends State<Todos> {
                                   onPressed: () {
                                     Navigator.of(context).pop(false);
                                   },
-                                  child: const Text('취소'),
                                   style: TextButton.styleFrom(
                                       textStyle: TextStyle(fontSize: 12)),
+                                  child: const Text('취소'),
                                 ),
                                 TextButton(
                                   onPressed: () {
                                     Navigator.of(context).pop(true);
                                   },
-                                  child: const Text('삭제',
-                                      style: TextStyle(color: Colors.red)),
                                   style: TextButton.styleFrom(
                                       textStyle: TextStyle(fontSize: 12)),
+                                  child: const Text('삭제',
+                                      style: TextStyle(color: Colors.red)),
                                 ),
                               ],
                             );
@@ -248,6 +250,7 @@ class _TodosState extends State<Todos> {
                                 title: titleController.text,
                                 description: descriptionController.text,
                                 createdAt: selectedDate,
+                                lastModified: DateTime.now(),
                                 color: selectedColor,
                                 tag: todo.tag,
                               );
@@ -423,81 +426,199 @@ class _TodosState extends State<Todos> {
   }
 
   void _showDraggableTodoDetails(Todo todo) {
+    double initialChildSize = 0.5; // 초기 높이
+    bool showSaveButton = false; // 저장 버튼 표시 여부
+    bool changeSaveButtonColor = false;
+
+    // TextEditingController를 미리 생성
+    TextEditingController titleController =
+        TextEditingController(text: todo.title);
+    TextEditingController descriptionController =
+        TextEditingController(text: todo.description);
+    DateTime selectedDate = todo.createdAt;
+
+    void updateSaveButtonState() {
+      // 내용이 변경되었는지 확인
+      changeSaveButtonColor = (titleController.text != todo.title ||
+          descriptionController.text != todo.description);
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent, // 배경을 투명하게 설정
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.45, // 초기 높이 30%
-          minChildSize: 0.45, // 최소 높이 30%
-          maxChildSize: 1.0, // 최대 높이 100%
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 드래그 표시
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          margin: EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[400],
-                            borderRadius: BorderRadius.circular(8),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Stack(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Container(
+                    color: Colors.transparent,
+                  ),
+                ),
+                DraggableScrollableSheet(
+                  initialChildSize: initialChildSize,
+                  minChildSize: 0.5,
+                  maxChildSize: 0.8,
+                  snap: true,
+                  builder: (context, scrollController) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(16)),
+                      ),
+                      child: GestureDetector(
+                        onTap: () {
+                          FocusScope.of(context).unfocus();
+                        },
+                        child: SingleChildScrollView(
+                          controller: scrollController,
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 드래그 표시
+                                Center(
+                                  child: Container(
+                                    width: 40,
+                                    height: 4,
+                                    margin: EdgeInsets.only(bottom: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[400],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.schedule),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          DateFormat('yyyy-MM-dd')
+                                              .format(selectedDate),
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ), // 저장 버튼
+                                    if (showSaveButton)
+                                      TextButton(
+                                          onPressed: () async {
+                                            // 수정된 텍스트를 todo 객체에 저장
+                                            todo.title = titleController.text;
+                                            todo.description =
+                                                descriptionController.text;
+                                            await DatabaseHelper.instance
+                                                .updateTodo(todo);
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            '저장',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: changeSaveButtonColor
+                                                  ? Colors.black
+                                                  : Colors.grey,
+                                            ),
+                                          ))
+                                  ],
+                                ),
+                                SizedBox(height: 6),
+                                // 제목
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.title, size: 24),
+                                    // 제목 왼쪽에 아이콘 추가
+                                    SizedBox(width: 8),
+                                    // 아이콘과 텍스트 필드 사이 간격
+                                    Expanded(
+                                      child: Focus(
+                                        onFocusChange: (hasFocus) {
+                                          if (hasFocus) {
+                                            setState(() {
+                                              initialChildSize = 0.8; // 창 크기 확장
+                                              showSaveButton = true;
+                                            });
+                                          }
+                                        },
+                                        child: TextField(
+                                          controller: titleController,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              updateSaveButtonState();
+                                            });
+                                          },
+                                          // 수정된 컨트롤러
+                                          decoration: InputDecoration(
+                                            border: InputBorder.none,
+                                          ),
+                                          style: TextStyle(fontSize: 18),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 4),
+                                // 내용
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(Icons.subject, size: 24),
+                                    // 제목 왼쪽에 아이콘 추가
+                                    SizedBox(width: 8),
+                                    // 아이콘과 텍스트 필드 사이 간격
+                                    Expanded(
+                                      child: Focus(
+                                        onFocusChange: (hasFocus) {
+                                          if (hasFocus) {
+                                            setState(() {
+                                              initialChildSize = 0.8; // 창 크기 확장
+                                              showSaveButton = true;
+                                            });
+                                          }
+                                        },
+                                        child: TextField(
+                                          controller: descriptionController,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              updateSaveButtonState();
+                                            });
+                                          },
+                                          // 수정된 컨트롤러
+                                          decoration: InputDecoration(
+                                            border: InputBorder.none,
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                    vertical: 2),
+                                          ),
+                                          maxLines: 5,
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                      // 제목
-                      TextField(
-                        controller: TextEditingController(text: todo.title),
-                        decoration: InputDecoration(
-                          labelText: '제목',
-                          border: OutlineInputBorder(),
-                        ),
-                        style: TextStyle(fontSize: 18),
-                      ),
-                      SizedBox(height: 16),
-                      // 내용
-                      TextField(
-                        controller:
-                            TextEditingController(text: todo.description),
-                        decoration: InputDecoration(
-                          labelText: '내용',
-                          border: OutlineInputBorder(),
-                        ),
-                        maxLines: 10,
-                        style: TextStyle(fontSize: 14),
-                      ),
-                      SizedBox(height: 16),
-                      // 저장 버튼
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: ElevatedButton.icon(
-                          icon: Icon(Icons.save),
-                          label: Text("저장"),
-                          onPressed: () async {
-                            // 저장 로직
-                            todo.title = TextEditingController().text;
-                            todo.description = TextEditingController().text;
-                            await DatabaseHelper.instance.updateTodo(todo);
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              ),
+              ],
             );
           },
         );
@@ -510,6 +631,20 @@ class _TodosState extends State<Todos> {
     final weekDays = _getWeekDays(_focusedDay);
 
     return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        // 스와이프 감지
+        if (details.primaryVelocity! > 0) {
+          // 오른쪽으로 스와이프: 이전 주
+          setState(() {
+            _focusedDay = _focusedDay.subtract(const Duration(days: 7));
+          });
+        } else if (details.primaryVelocity! < 0) {
+          // 왼쪽으로 스와이프: 다음 주
+          setState(() {
+            _focusedDay = _focusedDay.add(const Duration(days: 7));
+          });
+        }
+      },
       onTap: () {
         FocusScope.of(context).unfocus(); // 외부 클릭 시 포커스 해제
       },
@@ -522,13 +657,13 @@ class _TodosState extends State<Todos> {
             onPressed: () {
               _toggleCalendarPopup(context);
             },
-            child: Text(
-              _getYearToDisplay(),
-              style: TextStyle(fontSize: 24, color: Colors.black),
-            ),
             style: TextButton.styleFrom(
               padding: EdgeInsets.all(4),
               foregroundColor: Colors.white,
+            ),
+            child: Text(
+              _getYearToDisplay(),
+              style: TextStyle(fontSize: 24, color: Colors.black),
             ),
           ),
           actions: [
@@ -571,7 +706,7 @@ class _TodosState extends State<Todos> {
               icon: const Icon(Icons.arrow_forward_ios),
             ),
             IconButton(
-              visualDensity: VisualDensity(horizontal: -2, vertical: 0),
+              visualDensity: VisualDensity(horizontal: 0, vertical: 0),
               onPressed: () {
                 Navigator.of(context).push(_createRoute());
               },
@@ -593,10 +728,11 @@ class _TodosState extends State<Todos> {
                   final controller = _getControllerForDay(day);
 
                   return Card(
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 8.0, horizontal: 16.0),
+                    color: Colors.white,
+                    elevation: 0,
+                    margin: const EdgeInsets.fromLTRB(12, 4, 12, 16),
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -604,22 +740,25 @@ class _TodosState extends State<Todos> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '$dateLabel',
+                                dateLabel,
                                 style: const TextStyle(
-                                  fontSize: 18.0,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
-                                '$dayLabel',
+                                dayLabel,
                                 style: const TextStyle(
-                                  fontSize: 16.0,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8.0),
+                          Divider(
+                            thickness: 2,
+                            color: Colors.black,
+                          ),
                           todos.isEmpty
                               ? Container()
                               : Column(
@@ -689,7 +828,6 @@ class _TodosState extends State<Todos> {
                                     },
                                   ).toList(),
                                 ),
-                          const SizedBox(height: 4.0),
                           Row(
                             children: [
                               Expanded(
@@ -730,7 +868,7 @@ class _TodosState extends State<Todos> {
 class NoteEditPage extends StatelessWidget {
   final Todo todo;
 
-  const NoteEditPage({Key? key, required this.todo}) : super(key: key);
+  const NoteEditPage({super.key, required this.todo});
 
   @override
   Widget build(BuildContext context) {
@@ -765,6 +903,85 @@ class NoteEditPage extends StatelessWidget {
               controller: descriptionController,
               decoration: const InputDecoration(labelText: '내용'),
               maxLines: 10,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class TodoDetailsPage extends StatefulWidget {
+  final Todo todo;
+
+  const TodoDetailsPage({super.key, required this.todo});
+
+  @override
+  _TodoDetailsPageState createState() => _TodoDetailsPageState();
+}
+
+class _TodoDetailsPageState extends State<TodoDetailsPage> {
+  late TextEditingController _titleController;
+  late TextEditingController _descriptionController;
+
+  @override
+  void initState() {
+    super.initState();
+    // 기존 데이터로 컨트롤러 초기화
+    _titleController = TextEditingController(text: widget.todo.title);
+    _descriptionController =
+        TextEditingController(text: widget.todo.description);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Todo Details'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: InputDecoration(
+                labelText: '제목',
+                border: OutlineInputBorder(),
+              ),
+              style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: _descriptionController,
+              decoration: InputDecoration(
+                labelText: '내용',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 5,
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 16),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.save),
+                label: Text("저장"),
+                onPressed: () {
+                  // 수정된 데이터를 반환
+                  widget.todo.title = _titleController.text;
+                  widget.todo.description = _descriptionController.text;
+                  Navigator.pop(context, widget.todo);
+                },
+              ),
             ),
           ],
         ),

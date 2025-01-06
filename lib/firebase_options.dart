@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'handa-ffa31.firebasestorage.app',
     measurementId: 'G-58PMQWQY6Z',
   );
+
 }

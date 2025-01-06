@@ -1,7 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:handa/database/database_helper.dart';
 import 'package:handa/database/shared_preferences_helper.dart';
-import 'package:handa/models/todo.dart';
+
+// 초성 분리 함수 추가
+String extractInitials(String text) {
+  const choSung = [
+    'ㄱ',
+    'ㄲ',
+    'ㄴ',
+    'ㄷ',
+    'ㄸ',
+    'ㄹ',
+    'ㅁ',
+    'ㅂ',
+    'ㅃ',
+    'ㅅ',
+    'ㅆ',
+    'ㅇ',
+    'ㅈ',
+    'ㅉ',
+    'ㅊ',
+    'ㅋ',
+    'ㅌ',
+    'ㅍ',
+    'ㅎ'
+  ];
+  StringBuffer initials = StringBuffer();
+
+  for (int i = 0; i < text.length; i++) {
+    int charCode = text.codeUnitAt(i);
+    if (charCode >= 0xAC00 && charCode <= 0xD7A3) {
+      int index = ((charCode - 0xAC00) ~/ 28) ~/ 21;
+      initials.write(choSung[index]);
+    } else {
+      initials.write(text[i]); // 한글이 아니면 그대로 추가
+    }
+  }
+  return initials.toString();
+}
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -58,12 +94,11 @@ class SearchPageState extends State<Search> {
       return;
     }
 
-    final todos = await DatabaseHelper.instance.getTodos();
+    // 초성 검색 지원 함수 호출
+    final todos = await DatabaseHelper.instance.searchTodosWithInitials(query);
 
     setState(() {
       _searchResults = todos
-          .where((todo) =>
-              todo.title.contains(query) || todo.description.contains(query))
           .map((todo) => {
                 'type': 'TODO',
                 'data': todo,

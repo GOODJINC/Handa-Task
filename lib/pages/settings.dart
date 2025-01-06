@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handa/pages/subpages/account_page.dart';
+import 'package:handa/database/firebase_sync_helper.dart'; // 추가된 파일 import
 
 class Settings extends StatelessWidget {
   const Settings({super.key});
@@ -17,15 +18,28 @@ class Settings extends StatelessWidget {
         children: [
           _buildSection([
             _buildListTile(
-              '계정',
-              Icons.account_circle_outlined,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AccountPage()),
+              'Firebase 동기화',
+              Icons.cloud_sync,
+              () async {
+                // 1. Firebase로 로컬 데이터 업로드
+                await FirebaseSyncHelper.syncLocalToFirestore();
+
+                // 2. Firebase에서 변경된 데이터 가져오기
+                await FirebaseSyncHelper.syncFirestoreToLocal();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('동기화 완료!')),
                 );
               },
             ),
+          ]),
+          _buildSection([
+            _buildListTile('계정', Icons.account_circle_outlined, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AccountPage()),
+              );
+            }),
           ]),
           _buildSection([
             _buildListTile('설정관리', Icons.settings),

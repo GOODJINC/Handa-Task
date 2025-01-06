@@ -36,6 +36,13 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_core: ^3.9.0
 
+  sqflite: any
+  path: any
+  shared_preferences: any
+  intl: any
+  firebase_auth: any
+  google_sign_in: any
+  table_calendar: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -53,6 +60,7 @@ dev_dependencies:
   shared_preferences: ^2.3.4
   firebase_auth: ^5.3.4
   google_sign_in: ^6.2.2
+  cloud_firestore: ^5.6.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
