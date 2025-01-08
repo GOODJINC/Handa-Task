@@ -30,11 +30,11 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE todos(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT,
-        description TEXT,
-        isCompleted INTEGER,
-        createdAt TEXT,
-        lastModified TEXT,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        isCompleted INTEGER NOT NULL,
+        createdAt TEXT NOT NULL,
+        lastModified TEXT NOT NULL,
         color TEXT,
         tag TEXT
       )
@@ -51,13 +51,31 @@ class DatabaseHelper {
 
   Future<int> insertTodo(Todo todo) async {
     final db = await database;
-    return await db.insert('todos', todo.toMap());
+    return await db.insert(
+      'todos',
+      todo.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<List<Todo>> getTodos() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('todos');
-    return List.generate(maps.length, (i) => Todo.fromMap(maps[i]));
+
+    return List.generate(maps.length, (i) {
+      return Todo(
+        id: maps[i]['id'],
+        title: maps[i]['title'] ?? '',
+        description: maps[i]['description'] ?? '',
+        isCompleted: maps[i]['isCompleted'] == 1,
+        createdAt: DateTime.parse(maps[i]['createdAt']),
+        lastModified: maps[i]['lastModified'] != null
+            ? DateTime.parse(maps[i]['lastModified'])
+            : DateTime.now(),
+        color: maps[i]['color'] ?? 'blue',
+        tag: maps[i]['tag'], // 기본� 제거, null 허용
+      );
+    });
   }
 
   Future<int> updateTodo(Todo todo) async {

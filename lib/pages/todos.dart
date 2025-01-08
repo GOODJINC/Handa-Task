@@ -79,199 +79,17 @@ class _TodosState extends State<Todos> {
       createdAt: day,
       lastModified: DateTime.now(),
       color: 'blue',
-      tag: 'default',
+      tag: null,
     );
-    print('Adding new todo: ${newTodo.toMap()}');
-    await DatabaseHelper.instance.insertTodo(newTodo);
-    controller.clear();
-    await _loadTodos();
-  }
 
-  Future<void> _editTodo(Todo todo) async {
-    TextEditingController titleController =
-        TextEditingController(text: todo.title);
-    TextEditingController descriptionController =
-        TextEditingController(text: todo.description);
-    DateTime selectedDate = todo.createdAt;
-    String selectedColor = todo.color;
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return GestureDetector(
-              onTap: () {
-                FocusScope.of(context).unfocus(); // 키보드 닫기 및 포커싱 해제
-              },
-              child: AlertDialog(
-                contentPadding: EdgeInsets.all(10),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                titlePadding: EdgeInsets.zero,
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.today),
-                          onPressed: () {},
-                        ),
-                        Text(
-                          DateFormat('yyyy-MM-dd').format(selectedDate),
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              contentPadding: EdgeInsets.all(10),
-                              content: const Text(
-                                  '정말로 이 할 일을 삭제하시겠습니까? \n 되돌릴 수 없습니다.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop(false);
-                                  },
-                                  style: TextButton.styleFrom(
-                                      textStyle: TextStyle(fontSize: 12)),
-                                  child: const Text('취소'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop(true);
-                                  },
-                                  style: TextButton.styleFrom(
-                                      textStyle: TextStyle(fontSize: 12)),
-                                  child: const Text('삭제',
-                                      style: TextStyle(color: Colors.red)),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                        if (confirm == true) {
-                          await DatabaseHelper.instance.deleteTodo(todo.id!);
-                          await _loadTodos();
-                          Navigator.of(context).pop();
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                content: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextField(
-                        controller: titleController,
-                        decoration: const InputDecoration(hintText: '제목'),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: descriptionController,
-                        decoration: const InputDecoration(hintText: '내용'),
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
-                actions: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          fixedSize: const Size(20, 20),
-                          minimumSize: Size.zero,
-                          shape: const CircleBorder(),
-                          backgroundColor:
-                              _getColorFromName(selectedColor), // 현재 색상 표시
-                        ),
-                        onPressed: () async {
-                          final selected = await showDialog<String>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                content: Wrap(
-                                  spacing: 4,
-                                  children: [
-                                    'red',
-                                    'orange',
-                                    'yellow',
-                                    'green',
-                                    'blue'
-                                  ]
-                                      .map((color) => GestureDetector(
-                                            onTap: () {
-                                              Navigator.of(context).pop(color);
-                                            },
-                                            child: Container(
-                                              width: 30,
-                                              height: 30,
-                                              decoration: BoxDecoration(
-                                                color: _getColorFromName(color),
-                                                shape: BoxShape.circle,
-                                              ),
-                                            ),
-                                          ))
-                                      .toList(),
-                                ),
-                              );
-                            },
-                          );
-                          if (selected != null) {
-                            setState(() {
-                              selectedColor = selected;
-                            });
-                          }
-                        },
-                        child: const Text(''),
-                      ),
-                      Row(
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text('취소'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              final updatedTodo = Todo(
-                                id: todo.id,
-                                title: titleController.text,
-                                description: descriptionController.text,
-                                createdAt: selectedDate,
-                                lastModified: DateTime.now(),
-                                color: selectedColor,
-                                tag: todo.tag,
-                              );
-                              await DatabaseHelper.instance
-                                  .updateTodo(updatedTodo);
-                              await _loadTodos();
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text('확인'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+    try {
+      await DatabaseHelper.instance.insertTodo(newTodo);
+      controller.clear();
+      await _loadTodos();
+      setState(() {});
+    } catch (e) {
+      print('Error adding todo: $e');
+    }
   }
 
   Color _getColorFromName(String colorName) {
@@ -426,21 +244,54 @@ class _TodosState extends State<Todos> {
   }
 
   void _showDraggableTodoDetails(Todo todo) {
-    double initialChildSize = 0.5; // 초기 높이
-    bool showSaveButton = false; // 저장 버튼 표시 여부
-    bool changeSaveButtonColor = false;
+    bool isEditMode = false;
+    bool hasChanges = false;
+    bool isFirstWarning = true;
+    String focusedField = '';
 
-    // TextEditingController를 미리 생성
     TextEditingController titleController =
         TextEditingController(text: todo.title);
     TextEditingController descriptionController =
         TextEditingController(text: todo.description);
     DateTime selectedDate = todo.createdAt;
 
-    void updateSaveButtonState() {
-      // 내용이 변경되었는지 확인
-      changeSaveButtonColor = (titleController.text != todo.title ||
+    void checkChanges() {
+      hasChanges = (titleController.text != todo.title ||
           descriptionController.text != todo.description);
+    }
+
+    // 뒤로가기 경고 메시지 표시
+    Future<bool> _showExitWarning(BuildContext context) async {
+      // 키보드가 열�있으면 닫기
+      FocusScope.of(context).unfocus();
+
+      if (!hasChanges || !isFirstWarning) return true;
+
+      bool shouldExit = false;
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('저장되지 않은 변경사항'),
+          content: Text('변경사항이 저장되지 않았습니다. 저장하지 않고 나가시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                isFirstWarning = false;
+              },
+              child: Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                shouldExit = true;
+                Navigator.of(context).pop();
+              },
+              child: Text('나가기'),
+            ),
+          ],
+        ),
+      );
+      return shouldExit;
     }
 
     showModalBottomSheet(
@@ -448,34 +299,31 @@ class _TodosState extends State<Todos> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Stack(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Container(
-                    color: Colors.transparent,
+        return WillPopScope(
+          onWillPop: () => _showExitWarning(context),
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return Stack(
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      if (await _showExitWarning(context)) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: Container(color: Colors.transparent),
                   ),
-                ),
-                DraggableScrollableSheet(
-                  initialChildSize: initialChildSize,
-                  minChildSize: 0.5,
-                  maxChildSize: 0.8,
-                  snap: true,
-                  builder: (context, scrollController) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(16)),
-                      ),
-                      child: GestureDetector(
-                        onTap: () {
-                          FocusScope.of(context).unfocus();
-                        },
+                  DraggableScrollableSheet(
+                    initialChildSize: isEditMode ? 1 : 0.5,
+                    minChildSize: isEditMode ? 1 : 0.5,
+                    maxChildSize: isEditMode ? 1 : 0.5,
+                    builder: (context, scrollController) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
                         child: SingleChildScrollView(
                           controller: scrollController,
                           child: Padding(
@@ -483,144 +331,173 @@ class _TodosState extends State<Todos> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // 드래그 표시
                                 Center(
-                                  child: Container(
-                                    width: 40,
-                                    height: 4,
-                                    margin: EdgeInsets.only(bottom: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[400],
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
+                                  child: isEditMode
+                                      ? SizedBox(height: 12)
+                                      : Container(
+                                          width: 40,
+                                          height: 4,
+                                          margin: EdgeInsets.only(bottom: 16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[400],
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                        ),
                                 ),
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.schedule),
-                                        SizedBox(width: 10),
-                                        Text(
-                                          DateFormat('yyyy-MM-dd')
-                                              .format(selectedDate),
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w600),
-                                        ),
-                                      ],
-                                    ), // 저장 버튼
-                                    if (showSaveButton)
-                                      TextButton(
-                                          onPressed: () async {
-                                            // 수정된 텍스트를 todo 객체에 저장
-                                            todo.title = titleController.text;
-                                            todo.description =
-                                                descriptionController.text;
-                                            await DatabaseHelper.instance
-                                                .updateTodo(todo);
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text(
-                                            '저장',
+                                    if (isEditMode)
+                                      // 뒤로가기 버튼
+                                      IconButton(
+                                        icon: Icon(Icons.arrow_back),
+                                        onPressed: () async {
+                                          FocusScope.of(context)
+                                              .unfocus(); // �보드 닫기
+                                          if (await _showExitWarning(context)) {
+                                            Navigator.of(context).pop();
+                                          }
+                                        },
+                                      )
+                                    else
+                                      Row(
+                                        children: [
+                                          Icon(Icons.schedule),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            DateFormat('yyyy-MM-dd')
+                                                .format(selectedDate),
                                             style: TextStyle(
-                                              fontSize: 14,
-                                              color: changeSaveButtonColor
-                                                  ? Colors.black
-                                                  : Colors.grey,
-                                            ),
-                                          ))
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                        ],
+                                      ),
+                                    if (isEditMode)
+                                      // 저장 버튼 - 항상 표시되지만 상태에 따라 스타일 변경
+                                      TextButton(
+                                        onPressed: hasChanges
+                                            ? () async {
+                                                todo.title =
+                                                    titleController.text;
+                                                todo.description =
+                                                    descriptionController.text;
+                                                await DatabaseHelper.instance
+                                                    .updateTodo(todo);
+                                                Navigator.pop(context);
+                                              }
+                                            : null,
+                                        child: Text(
+                                          '저장',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: hasChanges
+                                                ? Colors.black
+                                                : Colors.grey[400],
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
                                 SizedBox(height: 6),
-                                // 제목
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.title, size: 24),
-                                    // 제목 왼쪽에 아이콘 추가
-                                    SizedBox(width: 8),
-                                    // 아이콘과 텍스트 필드 사이 간격
-                                    Expanded(
-                                      child: Focus(
-                                        onFocusChange: (hasFocus) {
-                                          if (hasFocus) {
-                                            setState(() {
-                                              initialChildSize = 0.8; // 창 크기 확장
-                                              showSaveButton = true;
-                                            });
-                                          }
-                                        },
-                                        child: TextField(
-                                          controller: titleController,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              updateSaveButtonState();
-                                            });
-                                          },
-                                          // 수정된 컨트롤러
-                                          decoration: InputDecoration(
-                                            border: InputBorder.none,
-                                          ),
-                                          style: TextStyle(fontSize: 18),
-                                        ),
+                                GestureDetector(
+                                  onTap: !isEditMode
+                                      ? () {
+                                          setState(() {
+                                            isEditMode = true;
+                                            focusedField = 'title';
+                                          });
+                                        }
+                                      : null,
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.title, size: 24),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: isEditMode
+                                            ? TextField(
+                                                autofocus:
+                                                    focusedField == 'title',
+                                                controller: titleController,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    checkChanges();
+                                                  });
+                                                },
+                                                decoration: InputDecoration(
+                                                  border: InputBorder.none,
+                                                ),
+                                                style: TextStyle(fontSize: 18),
+                                              )
+                                            : Text(
+                                                todo.title,
+                                                style: TextStyle(fontSize: 18),
+                                              ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                                 SizedBox(height: 4),
-                                // 내용
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(Icons.subject, size: 24),
-                                    // 제목 왼쪽에 아이콘 추가
-                                    SizedBox(width: 8),
-                                    // 아이콘과 텍스트 필드 사이 간격
-                                    Expanded(
-                                      child: Focus(
-                                        onFocusChange: (hasFocus) {
-                                          if (hasFocus) {
-                                            setState(() {
-                                              initialChildSize = 0.8; // 창 크기 확장
-                                              showSaveButton = true;
-                                            });
-                                          }
-                                        },
-                                        child: TextField(
-                                          controller: descriptionController,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              updateSaveButtonState();
-                                            });
-                                          },
-                                          // 수정된 컨트롤러
-                                          decoration: InputDecoration(
-                                            border: InputBorder.none,
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                                    vertical: 2),
-                                          ),
-                                          maxLines: 5,
-                                          style: TextStyle(fontSize: 16),
-                                        ),
+                                GestureDetector(
+                                  onTap: !isEditMode
+                                      ? () {
+                                          setState(() {
+                                            isEditMode = true;
+                                            focusedField = 'description';
+                                          });
+                                        }
+                                      : null,
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(Icons.subject, size: 24),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: isEditMode
+                                            ? TextField(
+                                                autofocus: focusedField ==
+                                                    'description',
+                                                controller:
+                                                    descriptionController,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    checkChanges();
+                                                  });
+                                                },
+                                                decoration: InputDecoration(
+                                                  border: InputBorder.none,
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                          vertical: 2),
+                                                ),
+                                                maxLines: 5,
+                                                style: TextStyle(fontSize: 16),
+                                              )
+                                            : Text(
+                                                todo.description,
+                                                style: TextStyle(fontSize: 16),
+                                              ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            );
-          },
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
         );
       },
     );

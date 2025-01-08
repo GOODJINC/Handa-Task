@@ -6,7 +6,7 @@ class Todo {
   DateTime createdAt;
   DateTime lastModified;
   String color;
-  String tag;
+  String? tag;
 
   Todo({
     this.id,
@@ -16,7 +16,7 @@ class Todo {
     required this.createdAt,
     required this.lastModified,
     required this.color,
-    required this.tag,
+    this.tag,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,9 +25,9 @@ class Todo {
       'title': title,
       'description': description,
       'isCompleted': isCompleted ? 1 : 0,
-      'createdAt': createdAt.toIso8601String(), // 2024-12-23 20:27:05.910410
+      'createdAt': createdAt.toIso8601String(),
       'lastModified': lastModified.toIso8601String(),
-      'color': color, // blue, green, red
+      'color': color ?? 'blue',
       'tag': tag,
     };
   }
