@@ -146,4 +146,9 @@ class DatabaseHelper {
     await db.insert('todos', todo.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
+
+  Future<void> deleteAllTodos() async {
+    final db = await database;
+    await db.delete('todos'); // todos 테이블의 모든 데이터 삭제
+  }
 }

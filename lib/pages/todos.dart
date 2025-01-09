@@ -386,6 +386,8 @@ class _TodosState extends State<Todos> {
                                                     descriptionController.text;
                                                 await DatabaseHelper.instance
                                                     .updateTodo(todo);
+                                                await _loadTodos(); // 데이터 새로고침
+                                                setState(() {});
                                                 Navigator.pop(context);
                                               }
                                             : null,
@@ -526,9 +528,7 @@ class _TodosState extends State<Todos> {
         FocusScope.of(context).unfocus(); // 외부 클릭 시 포커스 해제
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
         appBar: AppBar(
-          backgroundColor: Colors.white,
           scrolledUnderElevation: 0,
           title: TextButton(
             onPressed: () {
@@ -540,20 +540,27 @@ class _TodosState extends State<Todos> {
             ),
             child: Text(
               _getYearToDisplay(),
-              style: TextStyle(fontSize: 24, color: Colors.black),
+              style: TextStyle(fontSize: 24),
             ),
           ),
           actions: [
             IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Settings(),
-                    ),
-                  );
-                },
-                icon: Icon(Icons.account_circle_outlined)),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingsPage(),
+                  ),
+                );
+
+                // 설정 페이지에서 데이터가 변경되었다면 todos 리스트 새로고침
+                if (result == true) {
+                  await _loadTodos();
+                  setState(() {});
+                }
+              },
+              icon: Icon(Icons.account_circle_outlined),
+            ),
             IconButton(
               visualDensity: VisualDensity(horizontal: -2, vertical: 0),
               onPressed: () {
@@ -655,6 +662,13 @@ class _TodosState extends State<Todos> {
                                                       .spaceBetween,
                                               children: [
                                                 Container(
+                                                  constraints: BoxConstraints(
+                                                    maxWidth:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.75,
+                                                  ),
                                                   padding:
                                                       const EdgeInsets.all(6.0),
                                                   decoration: BoxDecoration(
@@ -670,18 +684,21 @@ class _TodosState extends State<Todos> {
                                                   child: Text(
                                                     todo.title,
                                                     style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 14,
-                                                        decoration: todo
-                                                                .isCompleted
-                                                            ? TextDecoration
-                                                                .lineThrough // 완료 상태일 때 취소선
-                                                            : TextDecoration
-                                                                .none,
-                                                        decorationColor: todo
-                                                                .isCompleted
-                                                            ? Colors.grey[600]
-                                                            : null),
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                      decoration: todo
+                                                              .isCompleted
+                                                          ? TextDecoration
+                                                              .lineThrough // 완료 상태일 때 취소선
+                                                          : TextDecoration.none,
+                                                      decorationColor:
+                                                          todo.isCompleted
+                                                              ? Colors.grey[600]
+                                                              : null,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
                                                   ),
                                                 ),
                                                 Checkbox(
