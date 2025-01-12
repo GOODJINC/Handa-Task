@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:handa/database/database_helper.dart';
 import 'package:handa/models/todo.dart';
 import 'package:handa/pages/search.dart';
+import 'package:handa/theme/theme_provider.dart';
 
 class Todos extends StatefulWidget {
   const Todos({super.key});
@@ -27,6 +28,20 @@ class _TodosState extends State<Todos> {
     super.initState();
     _selectedDay = DateTime.now();
     _loadTodos();
+
+    // 페이지가 처음 생성될 때 포커스 해제
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).unfocus();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 페이지로 돌아올 때마다 포커스 해제
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).unfocus();
+    });
   }
 
   @override
@@ -262,7 +277,7 @@ class _TodosState extends State<Todos> {
 
     // 뒤로가기 경고 메시지 표시
     Future<bool> _showExitWarning(BuildContext context) async {
-      // 키보드가 열�있으면 닫기
+      // 키보드가 열려있으면 닫기
       FocusScope.of(context).unfocus();
 
       if (!hasChanges || !isFirstWarning) return true;
@@ -320,7 +335,7 @@ class _TodosState extends State<Todos> {
                     builder: (context, scrollController) {
                       return Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius:
                               BorderRadius.vertical(top: Radius.circular(16)),
                         ),
@@ -367,12 +382,15 @@ class _TodosState extends State<Todos> {
                                           Icon(Icons.schedule),
                                           SizedBox(width: 10),
                                           Text(
-                                            DateFormat('yyyy-MM-dd')
-                                                .format(selectedDate),
-                                            style: TextStyle(
+                                              DateFormat('yyyy-MM-dd')
+                                                  .format(selectedDate),
+                                              style: TextStyle(
+                                                color: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyLarge
+                                                    ?.color,
                                                 fontSize: 20,
-                                                fontWeight: FontWeight.w600),
-                                          ),
+                                              )),
                                         ],
                                       ),
                                     if (isEditMode)
@@ -434,12 +452,22 @@ class _TodosState extends State<Todos> {
                                                 decoration: InputDecoration(
                                                   border: InputBorder.none,
                                                 ),
-                                                style: TextStyle(fontSize: 18),
+                                                style: TextStyle(
+                                                  color: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyLarge
+                                                      ?.color,
+                                                  fontSize: 20,
+                                                ),
                                               )
-                                            : Text(
-                                                todo.title,
-                                                style: TextStyle(fontSize: 18),
-                                              ),
+                                            : Text(todo.title,
+                                                style: TextStyle(
+                                                  color: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyLarge
+                                                      ?.color,
+                                                  fontSize: 20,
+                                                )),
                                       ),
                                     ],
                                   ),
@@ -479,11 +507,14 @@ class _TodosState extends State<Todos> {
                                                           vertical: 2),
                                                 ),
                                                 maxLines: 5,
-                                                style: TextStyle(fontSize: 16),
-                                              )
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium)
                                             : Text(
                                                 todo.description,
-                                                style: TextStyle(fontSize: 16),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium,
                                               ),
                                       ),
                                     ],
@@ -540,7 +571,7 @@ class _TodosState extends State<Todos> {
             ),
             child: Text(
               _getYearToDisplay(),
-              style: TextStyle(fontSize: 24),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
           actions: [
@@ -612,7 +643,7 @@ class _TodosState extends State<Todos> {
                   final controller = _getControllerForDay(day);
 
                   return Card(
-                    color: Colors.white,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     elevation: 0,
                     margin: const EdgeInsets.fromLTRB(12, 4, 12, 16),
                     child: Padding(
@@ -641,7 +672,7 @@ class _TodosState extends State<Todos> {
                           ),
                           Divider(
                             thickness: 2,
-                            color: Colors.black,
+                            color: Theme.of(context).hintColor,
                           ),
                           todos.isEmpty
                               ? Container()
@@ -734,7 +765,7 @@ class _TodosState extends State<Todos> {
                                               BorderSide(color: Colors.grey)),
                                       contentPadding:
                                           EdgeInsets.symmetric(vertical: 4)),
-                                  style: TextStyle(fontSize: 14),
+                                  style: Theme.of(context).textTheme.bodyMedium,
                                   onSubmitted: (value) async {
                                     if (value.trim().isNotEmpty) {
                                       await _addTodoForDay(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +8,7 @@ import 'package:handa/database/database_helper.dart';
 import 'package:handa/pages/subpages/backup_restore.dart';
 import 'package:provider/provider.dart';
 import 'package:handa/theme/theme_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
   // StatefulWidget으로 변경
@@ -158,19 +160,25 @@ class _SettingsPageState extends State<SettingsPage> {
                             Expanded(
                               child: Text(
                                 '마지막 동기화: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
-                                style: TextStyle(color: Colors.grey),
+                                style: Theme.of(context).textTheme.labelSmall,
                               ),
                             ),
-                            ElevatedButton(
+                            ElevatedButton.icon(
                               onPressed: () {
                                 // 동기화 기능 구현
                               },
+                              icon: Icon(Icons.sync),
                               style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                fixedSize: Size(100, 20),
                                 backgroundColor: Colors.grey[200],
                                 elevation: 0,
                               ),
-                              child: Text('동기화',
-                                  style: TextStyle(color: Colors.black87)),
+                              label: Text('동기화',
+                                  style: TextStyle(
+                                      fontSize: 14, color: Colors.black87)),
                             ),
                           ],
                         ),
@@ -188,14 +196,14 @@ class _SettingsPageState extends State<SettingsPage> {
           // 앱 설정 섹션
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text('앱 설정',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w600,
-                )),
+            child: Text(
+              '앱 설정',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
           ),
-          _buildSettingItem('화면 모드', '라이트'),
+          _buildSettingItem('다크 모드', ''),
           _buildSettingItem('테마', '기본'),
           _buildSettingItem('날짜 형식', 'MM-DD'),
           _buildSettingItem('주 시작일', '월요일'),
@@ -232,7 +240,7 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.all(16),
             child: Text(
               '앱 버전 V1.0.0',
-              style: TextStyle(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.labelSmall,
               textAlign: TextAlign.center,
             ),
           ),
@@ -243,29 +251,30 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSettingItem(String title, String value) {
     return ListTile(
-      title: Text(title),
-      trailing: title == '화면 모드'
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.labelLarge,
+      ),
+      trailing: title == '다크 모드'
           ? Consumer<ThemeProvider>(
               builder: (context, themeProvider, child) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      themeProvider.isDarkMode ? '다크' : '라이트',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                    Switch(
-                      value: themeProvider.isDarkMode,
-                      onChanged: (bool value) {
-                        themeProvider.toggleTheme();
-                      },
-                    ),
-                  ],
+                return Transform.scale(
+                  scale: 0.8,
+                  child: CupertinoSwitch(
+                    activeTrackColor: Theme.of(context).primaryColor,
+                    value: themeProvider.isDarkMode,
+                    onChanged: (bool value) {
+                      themeProvider.toggleTheme();
+                    },
+                  ),
                 );
               },
             )
-          : Text(value, style: TextStyle(color: Colors.grey[600])),
-      onTap: title == '화면 모드'
+          : Text(
+              value,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+      onTap: title == '다크 모드'
           ? () {
               final themeProvider = Provider.of<ThemeProvider>(
                 context,
@@ -279,19 +288,49 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSettingItemWithArrow(String title) {
     return ListTile(
-      title: Text(title),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.labelLarge,
+      ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
-        if (title == '데이터 초기화') {
+        if (title == '도움말') {
+          final Uri url = Uri.parse('https://handatask.com');
+          try {
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            } else {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('웹사이트를 열 수 없습니다.')),
+                );
+              }
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('오류가 발생했습니다: $e')),
+              );
+            }
+          }
+        } else if (title == '데이터 초기화') {
           // 경고 다이얼로그 표시
           bool shouldDelete = await showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: Text('데이터 초기화'),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.0), // 둥근 모서리
+                      side: BorderSide(
+                        color: Colors.white, // 외곽선 색상
+                        width: 1, // 외곽선 두께
+                      ),
+                    ),
+                    title: Text('데이터 초기화',
+                        style: Theme.of(context).textTheme.titleLarge),
                     content: Text(
                       '모든 할 일 데이터가 영구적으로 삭제됩니다.\n계속하시겠습니까?',
-                      style: TextStyle(fontSize: 16),
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
                     actions: [
                       TextButton(

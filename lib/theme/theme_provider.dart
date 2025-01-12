@@ -30,6 +30,7 @@ class ThemeProvider with ChangeNotifier {
     brightness: Brightness.light,
     primaryColor: Colors.blue,
     scaffoldBackgroundColor: Colors.white,
+    hintColor: Colors.black,
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.white,
       foregroundColor: Colors.black,
@@ -39,12 +40,44 @@ class ThemeProvider with ChangeNotifier {
       primary: Colors.blue,
       secondary: Colors.blueAccent,
     ),
+    textTheme: TextTheme(
+      titleLarge: TextStyle(
+        // 날짜와 요일 텍스트용
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Colors.black,
+      ),
+      bodyLarge: TextStyle(
+        // 할 일 제목용
+        fontSize: 18,
+        color: Colors.white,
+      ),
+      bodyMedium: TextStyle(
+        // 일반 텍스트용
+        fontSize: 16,
+        color: Colors.white,
+      ),
+      labelLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Colors.black,
+      ),
+      labelMedium: TextStyle(
+        fontSize: 14,
+        color: Colors.black,
+      ),
+      labelSmall: TextStyle(
+        fontSize: 12,
+        color: Colors.black,
+      ),
+    ),
   );
 
   static final _darkTheme = ThemeData(
     brightness: Brightness.dark,
     primaryColor: Colors.blue,
     scaffoldBackgroundColor: Colors.grey[900],
+    hintColor: Colors.white,
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.grey[900],
       foregroundColor: Colors.white,
@@ -53,6 +86,37 @@ class ThemeProvider with ChangeNotifier {
     colorScheme: ColorScheme.dark(
       primary: Colors.blue,
       secondary: Colors.blueAccent,
+    ),
+    textTheme: TextTheme(
+      titleLarge: TextStyle(
+        // 날짜와 요일 텍스트용
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+      bodyLarge: TextStyle(
+        // 할 일 제목용
+        fontSize: 18,
+        color: Colors.black,
+      ),
+      bodyMedium: TextStyle(
+        // 일반 텍스트용
+        fontSize: 16,
+        color: Colors.black,
+      ),
+      labelLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Colors.white,
+      ),
+      labelMedium: TextStyle(
+        fontSize: 14,
+        color: Colors.white,
+      ),
+      labelSmall: TextStyle(
+        fontSize: 12,
+        color: Colors.white,
+      ),
     ),
   );
 }
