@@ -6,6 +6,10 @@ import 'package:handa/database/database_helper.dart';
 import 'package:handa/models/todo.dart';
 import 'package:handa/pages/search.dart';
 import 'package:handa/theme/theme_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:handa/providers/date_format_provider.dart';
+import 'package:handa/providers/week_start_provider.dart';
+import 'package:handa/l10n/app_localizations.dart';
 
 class Todos extends StatefulWidget {
   const Todos({super.key});
@@ -146,9 +150,20 @@ class _TodosState extends State<Todos> {
   }
 
   List<DateTime> _getWeekDays(DateTime focusedDay) {
+    final weekStartProvider =
+        Provider.of<WeekStartProvider>(context, listen: false);
     final int weekDay = focusedDay.weekday;
-    final DateTime monday = focusedDay.subtract(Duration(days: weekDay - 1));
-    return List.generate(7, (index) => monday.add(Duration(days: index)));
+    final int startDay = weekStartProvider.startDay;
+
+    // 현재 요일과 시작 요일의 차이를 계산
+    int diff = weekDay - startDay;
+    if (startDay == DateTime.sunday) {
+      diff = weekDay; // 일요일부터 시작할 경우 특별 처리
+    }
+
+    // 주의 시작일 계산
+    final DateTime weekStart = focusedDay.subtract(Duration(days: diff));
+    return List.generate(7, (index) => weekStart.add(Duration(days: index)));
   }
 
   void _toggleCalendarPopup(BuildContext context) {
@@ -370,7 +385,7 @@ class _TodosState extends State<Todos> {
                                         icon: Icon(Icons.arrow_back),
                                         onPressed: () async {
                                           FocusScope.of(context)
-                                              .unfocus(); // �보드 닫기
+                                              .unfocus(); // 키보드 닫기
                                           if (await _showExitWarning(context)) {
                                             Navigator.of(context).pop();
                                           }
@@ -539,6 +554,7 @@ class _TodosState extends State<Todos> {
   @override
   Widget build(BuildContext context) {
     final weekDays = _getWeekDays(_focusedDay);
+    final dateFormatProvider = Provider.of<DateFormatProvider>(context);
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
@@ -639,7 +655,7 @@ class _TodosState extends State<Todos> {
                   final day = weekDays[index];
                   final todos = _getTodosForDay(day);
                   final dayLabel = DateFormat('E', 'ko_KR').format(day);
-                  final dateLabel = DateFormat('MM월 dd일').format(day);
+                  final dateLabel = dateFormatProvider.formatDate(day);
                   final controller = _getControllerForDay(day);
 
                   return Card(
@@ -656,16 +672,24 @@ class _TodosState extends State<Todos> {
                             children: [
                               Text(
                                 dateLabel,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.color,
                                 ),
                               ),
                               Text(
                                 dayLabel,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.color,
                                 ),
                               ),
                             ],
@@ -759,7 +783,7 @@ class _TodosState extends State<Todos> {
                                 child: TextField(
                                   controller: controller,
                                   decoration: InputDecoration(
-                                      hintText: '할 일 추가하기',
+                                      hintText: AppLocalizations.of(context).translate('addTodo'),
                                       enabledBorder: UnderlineInputBorder(
                                           borderSide:
                                               BorderSide(color: Colors.grey)),

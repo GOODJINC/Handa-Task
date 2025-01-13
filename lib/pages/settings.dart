@@ -9,6 +9,10 @@ import 'package:handa/pages/subpages/backup_restore.dart';
 import 'package:provider/provider.dart';
 import 'package:handa/theme/theme_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:handa/providers/date_format_provider.dart';
+import 'package:handa/providers/week_start_provider.dart';
+import 'package:handa/providers/locale_provider.dart';
+import 'package:handa/l10n/app_localizations.dart';
 
 class SettingsPage extends StatefulWidget {
   // StatefulWidget으로 변경
@@ -159,7 +163,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           children: [
                             Expanded(
                               child: Text(
-                                '마지막 동기화: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
+                                '${AppLocalizations.of(context).translate('lastSync')}${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
                                 style: Theme.of(context).textTheme.labelSmall,
                               ),
                             ),
@@ -176,7 +180,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                 backgroundColor: Colors.grey[200],
                                 elevation: 0,
                               ),
-                              label: Text('동기화',
+                              label: Text(
+                                  AppLocalizations.of(context)
+                                      .translate('sync'),
                                   style: TextStyle(
                                       fontSize: 14, color: Colors.black87)),
                             ),
@@ -186,7 +192,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     ],
                   )
                 : ListTile(
-                    title: const Text('로그인 시 동기화 서비스 이용이 가능합니다.',
+                    title: Text(
+                        AppLocalizations.of(context).translate('loginForSync'),
                         style: TextStyle(fontSize: 14)),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: _handleGoogleSignIn,
@@ -197,14 +204,14 @@ class _SettingsPageState extends State<SettingsPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-              '앱 설정',
+              AppLocalizations.of(context).translate('appSettings'),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
             ),
           ),
           _buildSettingItem('다크 모드', ''),
-          _buildSettingItem('테마', '기본'),
+          // _buildSettingItem('테마', '기본'),
           _buildSettingItem('날짜 형식', 'MM-DD'),
           _buildSettingItem('주 시작일', '월요일'),
           _buildSettingItem('언어', '한국어'),
@@ -212,7 +219,7 @@ class _SettingsPageState extends State<SettingsPage> {
           // 백업/복원 섹션
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text('백업/복원',
+            child: Text(AppLocalizations.of(context).translate('backupRestore'),
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -226,7 +233,7 @@ class _SettingsPageState extends State<SettingsPage> {
           // 지원 섹션
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text('지원',
+            child: Text(AppLocalizations.of(context).translate('support'),
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -239,7 +246,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              '앱 버전 V1.0.0',
+              '${AppLocalizations.of(context).translate('appVersion')} V1.0.0',
               style: Theme.of(context).textTheme.labelSmall,
               textAlign: TextAlign.center,
             ),
@@ -252,7 +259,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSettingItem(String title, String value) {
     return ListTile(
       title: Text(
-        title,
+        AppLocalizations.of(context)
+            .translate(title.toLowerCase().replaceAll(' ', '')),
         style: Theme.of(context).textTheme.labelLarge,
       ),
       trailing: title == '다크 모드'
@@ -270,19 +278,146 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               },
             )
-          : Text(
-              value,
-              style: Theme.of(context).textTheme.labelMedium,
+          : title == '날짜 형식'
+              ? Consumer<DateFormatProvider>(
+                  builder: (context, dateFormatProvider, child) {
+                    return Text(
+                      dateFormatProvider.dateFormat,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    );
+                  },
+                )
+              : title == '주 시작일'
+                  ? Consumer<WeekStartProvider>(
+                      builder: (context, weekStartProvider, child) {
+                        return Text(
+                          weekStartProvider.startDayString,
+                          style: Theme.of(context).textTheme.labelMedium,
+                        );
+                      },
+                    )
+                  : title == '언어'
+                      ? Consumer<LocaleProvider>(
+                          builder: (context, localeProvider, child) {
+                            return Text(
+                              localeProvider.currentLanguageName,
+                              style: Theme.of(context).textTheme.labelMedium,
+                            );
+                          },
+                        )
+                      : Text(
+                          value,
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+      onTap: title == '날짜 형식'
+          ? () => _showDateFormatPicker()
+          : title == '다크 모드'
+              ? () {
+                  final themeProvider =
+                      Provider.of<ThemeProvider>(context, listen: false);
+                  themeProvider.toggleTheme();
+                }
+              : title == '주 시작일'
+                  ? () => _showWeekStartPicker()
+                  : title == '언어'
+                      ? () => _showLanguagePicker()
+                      : null,
+    );
+  }
+
+  void _showDateFormatPicker() {
+    final dateFormatProvider =
+        Provider.of<DateFormatProvider>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context).translate('selectDateFormat')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('MM월 DD일'),
+              onTap: () {
+                dateFormatProvider.setDateFormat('MM월 DD일');
+                Navigator.pop(context);
+              },
             ),
-      onTap: title == '다크 모드'
-          ? () {
-              final themeProvider = Provider.of<ThemeProvider>(
-                context,
-                listen: false,
-              );
-              themeProvider.toggleTheme();
-            }
-          : null,
+            ListTile(
+              title: Text('MM-DD'),
+              onTap: () {
+                dateFormatProvider.setDateFormat('MM-DD');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: Text('MM/DD'),
+              onTap: () {
+                dateFormatProvider.setDateFormat('MM/DD');
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showWeekStartPicker() {
+    final weekStartProvider =
+        Provider.of<WeekStartProvider>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context).translate('selectWeekStart')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('월요일'),
+              onTap: () {
+                weekStartProvider.setStartDay(DateTime.monday);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: Text('일요일'),
+              onTap: () {
+                weekStartProvider.setStartDay(DateTime.sunday);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLanguagePicker() {
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context).translate('selectLanguage')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: LocaleProvider.supportedLocales.entries.map((entry) {
+            return ListTile(
+              title: Text(entry.value),
+              onTap: () {
+                localeProvider.setLocale(entry.key);
+                Navigator.pop(context);
+                // 설정 화면 갱신
+                setState(() {});
+                // 또는 전체 화면을 다시 빌드하기 위해 Navigator.pushReplacement 사용
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
+              },
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 
