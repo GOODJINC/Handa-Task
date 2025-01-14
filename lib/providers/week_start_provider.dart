@@ -8,7 +8,8 @@ class WeekStartProvider with ChangeNotifier {
   int _startDay = defaultStartDay;
 
   int get startDay => _startDay;
-  String get startDayString => _startDay == DateTime.monday ? '월요일' : '일요일';
+  String get startDayString =>
+      _startDay == DateTime.monday ? 'monday' : 'sunday';
 
   WeekStartProvider() {
     _loadStartDay();

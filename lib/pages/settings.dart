@@ -129,7 +129,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('설정'),
+        title: Text(AppLocalizations.of(context).translate('settings')),
         scrolledUnderElevation: 0,
       ),
       body: ListView(
@@ -210,11 +210,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
             ),
           ),
-          _buildSettingItem('다크 모드', ''),
+          _buildSettingItem(
+              AppLocalizations.of(context).translate('darkMode'), ''),
           // _buildSettingItem('테마', '기본'),
-          _buildSettingItem('날짜 형식', 'MM-DD'),
-          _buildSettingItem('주 시작일', '월요일'),
-          _buildSettingItem('언어', '한국어'),
+          _buildSettingItem(
+              AppLocalizations.of(context).translate('dateFormat'), 'MM-DD'),
+          _buildSettingItem(AppLocalizations.of(context).translate('weekStart'),
+              AppLocalizations.of(context).translate('monday')),
+          _buildSettingItem(AppLocalizations.of(context).translate('language'),
+              AppLocalizations.of(context).translate('korean')),
 
           // 백업/복원 섹션
           Padding(
@@ -226,9 +230,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   fontWeight: FontWeight.w600,
                 )),
           ),
-          _buildSettingItemWithArrow('클라우드에 백업'),
-          _buildSettingItemWithArrow('장치에 백업/복원'),
-          _buildSettingItemWithArrow('데이터 초기화'),
+          _buildSettingItemWithArrow(
+              AppLocalizations.of(context).translate('cloudBackup')),
+          _buildSettingItemWithArrow(
+              AppLocalizations.of(context).translate('deviceBackup')),
+          _buildSettingItemWithArrow(
+              AppLocalizations.of(context).translate('dataReset')),
 
           // 지원 섹션
           Padding(
@@ -240,7 +247,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   fontWeight: FontWeight.w600,
                 )),
           ),
-          _buildSettingItemWithArrow('도움말'),
+          _buildSettingItemWithArrow(
+              AppLocalizations.of(context).translate('help')),
 
           // 앱 버전
           Padding(
@@ -263,7 +271,7 @@ class _SettingsPageState extends State<SettingsPage> {
             .translate(title.toLowerCase().replaceAll(' ', '')),
         style: Theme.of(context).textTheme.labelLarge,
       ),
-      trailing: title == '다크 모드'
+      trailing: title == AppLocalizations.of(context).translate('darkMode')
           ? Consumer<ThemeProvider>(
               builder: (context, themeProvider, child) {
                 return Transform.scale(
@@ -278,7 +286,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               },
             )
-          : title == '날짜 형식'
+          : title == AppLocalizations.of(context).translate('dateFormat')
               ? Consumer<DateFormatProvider>(
                   builder: (context, dateFormatProvider, child) {
                     return Text(
@@ -287,16 +295,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     );
                   },
                 )
-              : title == '주 시작일'
+              : title == AppLocalizations.of(context).translate('weekStart')
                   ? Consumer<WeekStartProvider>(
                       builder: (context, weekStartProvider, child) {
                         return Text(
-                          weekStartProvider.startDayString,
+                          AppLocalizations.of(context)
+                              .translate(weekStartProvider.startDayString),
                           style: Theme.of(context).textTheme.labelMedium,
                         );
                       },
                     )
-                  : title == '언어'
+                  : title == AppLocalizations.of(context).translate('language')
                       ? Consumer<LocaleProvider>(
                           builder: (context, localeProvider, child) {
                             return Text(
@@ -309,17 +318,17 @@ class _SettingsPageState extends State<SettingsPage> {
                           value,
                           style: Theme.of(context).textTheme.labelMedium,
                         ),
-      onTap: title == '날짜 형식'
+      onTap: title == AppLocalizations.of(context).translate('dateFormat')
           ? () => _showDateFormatPicker()
-          : title == '다크 모드'
+          : title == AppLocalizations.of(context).translate('darkMode')
               ? () {
                   final themeProvider =
                       Provider.of<ThemeProvider>(context, listen: false);
                   themeProvider.toggleTheme();
                 }
-              : title == '주 시작일'
+              : title == AppLocalizations.of(context).translate('weekStart')
                   ? () => _showWeekStartPicker()
-                  : title == '언어'
+                  : title == AppLocalizations.of(context).translate('language')
                       ? () => _showLanguagePicker()
                       : null,
     );
@@ -373,14 +382,14 @@ class _SettingsPageState extends State<SettingsPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text('월요일'),
+              title: Text(AppLocalizations.of(context).translate('monday')),
               onTap: () {
                 weekStartProvider.setStartDay(DateTime.monday);
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              title: Text('일요일'),
+              title: Text(AppLocalizations.of(context).translate('sunday')),
               onTap: () {
                 weekStartProvider.setStartDay(DateTime.sunday);
                 Navigator.pop(context);
@@ -400,11 +409,11 @@ class _SettingsPageState extends State<SettingsPage> {
         title: Text(AppLocalizations.of(context).translate('selectLanguage')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: LocaleProvider.supportedLocales.entries.map((entry) {
-            return ListTile(
-              title: Text(entry.value),
+          children: [
+            ListTile(
+              title: Text(AppLocalizations.of(context).translate('korean')),
               onTap: () {
-                localeProvider.setLocale(entry.key);
+                localeProvider.setLocale('ko');
                 Navigator.pop(context);
                 // 설정 화면 갱신
                 setState(() {});
@@ -414,8 +423,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   MaterialPageRoute(builder: (context) => const SettingsPage()),
                 );
               },
-            );
-          }).toList(),
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context).translate('english')),
+              onTap: () {
+                localeProvider.setLocale('en');
+                Navigator.pop(context);
+                setState(() {});
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -429,7 +450,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
-        if (title == '도움말') {
+        if (title == AppLocalizations.of(context).translate('help')) {
           final Uri url = Uri.parse('https://handatask.com');
           try {
             if (await canLaunchUrl(url)) {
@@ -448,7 +469,8 @@ class _SettingsPageState extends State<SettingsPage> {
               );
             }
           }
-        } else if (title == '데이터 초기화') {
+        } else if (title ==
+            AppLocalizations.of(context).translate('dataReset')) {
           // 경고 다이얼로그 표시
           bool shouldDelete = await showDialog(
                 context: context,
@@ -506,7 +528,8 @@ class _SettingsPageState extends State<SettingsPage> {
               );
             }
           }
-        } else if (title == '장치에 백업/복원') {
+        } else if (title ==
+            AppLocalizations.of(context).translate('deviceBackup')) {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(

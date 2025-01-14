@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:handa/providers/date_format_provider.dart';
 import 'package:handa/providers/week_start_provider.dart';
 import 'package:handa/l10n/app_localizations.dart';
+import 'package:handa/providers/locale_provider.dart';
 
 class Todos extends StatefulWidget {
   const Todos({super.key});
@@ -42,10 +43,6 @@ class _TodosState extends State<Todos> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 페이지로 돌아올 때마다 포커스 해제
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).unfocus();
-    });
   }
 
   @override
@@ -142,10 +139,11 @@ class _TodosState extends State<Todos> {
 
     if (isCurrentWeek && today.month == 1 && mondayOfWeek.year != today.year) {
       // 오늘이 새해 첫날이고 이번 주가 연도를 넘어가는 경우
-      return '${today.year}년';
+      return '${today.year}' + AppLocalizations.of(context).translate('year');
     } else {
       // 일반적인 경우
-      return '${mondayOfWeek.year}년';
+      return '${mondayOfWeek.year}' +
+          AppLocalizations.of(context).translate('year');
     }
   }
 
@@ -197,15 +195,31 @@ class _TodosState extends State<Todos> {
                     child: Container(
                       width: 260,
                       padding: const EdgeInsets.all(4),
-                      color: Colors.white,
+                      color: Theme.of(context).appBarTheme.backgroundColor,
                       child: TableCalendar(
-                        locale: 'ko_KR',
+                        locale:
+                            AppLocalizations.of(context).translate('locale'),
                         headerStyle: HeaderStyle(
+                          titleTextStyle: TextStyle(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.color),
                           headerPadding: EdgeInsets.all(2),
                           formatButtonVisible: false,
                           titleCentered: true,
                         ),
                         calendarStyle: CalendarStyle(
+                          outsideTextStyle: TextStyle(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.color),
+                          defaultTextStyle: TextStyle(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.color),
                           rangeHighlightScale: 1,
                           rangeHighlightColor: Colors.blue,
                           withinRangeTextStyle: TextStyle(color: Colors.white),
@@ -555,6 +569,7 @@ class _TodosState extends State<Todos> {
   Widget build(BuildContext context) {
     final weekDays = _getWeekDays(_focusedDay);
     final dateFormatProvider = Provider.of<DateFormatProvider>(context);
+    final localeProvider = Provider.of<LocaleProvider>(context);
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
@@ -654,7 +669,8 @@ class _TodosState extends State<Todos> {
                 itemBuilder: (context, index) {
                   final day = weekDays[index];
                   final todos = _getTodosForDay(day);
-                  final dayLabel = DateFormat('E', 'ko_KR').format(day);
+                  final dayLabel =
+                      DateFormat('E', localeProvider.currentLocale).format(day);
                   final dateLabel = dateFormatProvider.formatDate(day);
                   final controller = _getControllerForDay(day);
 
@@ -783,13 +799,15 @@ class _TodosState extends State<Todos> {
                                 child: TextField(
                                   controller: controller,
                                   decoration: InputDecoration(
-                                      hintText: AppLocalizations.of(context).translate('addTodo'),
+                                      hintText: AppLocalizations.of(context)
+                                          .translate('addTodo'),
                                       enabledBorder: UnderlineInputBorder(
                                           borderSide:
                                               BorderSide(color: Colors.grey)),
                                       contentPadding:
                                           EdgeInsets.symmetric(vertical: 4)),
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  style:
+                                      Theme.of(context).textTheme.labelMedium,
                                   onSubmitted: (value) async {
                                     if (value.trim().isNotEmpty) {
                                       await _addTodoForDay(

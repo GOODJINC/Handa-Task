@@ -43,7 +43,7 @@ class ThemeProvider with ChangeNotifier {
     textTheme: TextTheme(
       titleLarge: TextStyle(
         // 날짜와 요일 텍스트용
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: FontWeight.bold,
         color: Colors.black,
       ),
@@ -90,7 +90,7 @@ class ThemeProvider with ChangeNotifier {
     textTheme: TextTheme(
       titleLarge: TextStyle(
         // 날짜와 요일 텍스트용
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: FontWeight.bold,
         color: Colors.white,
       ),
